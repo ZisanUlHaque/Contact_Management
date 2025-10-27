@@ -1,0 +1,14 @@
+# Executables and object files
+*.exe
+*.o
+
+# Database
+*.db
+
+# Temporary and system files
+*.tmp
+*.manifest
+.DS_Store
+
+# VS Code
+.vscode/
