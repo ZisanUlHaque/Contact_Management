@@ -1,4 +1,3 @@
-// main.c
 #define _WIN32_IE 0x0500  
 
 #include <windows.h>
@@ -54,10 +53,8 @@ void InitDatabase() {
     }
 }
 
-// AddContact 
 void AddContact(const char *name, const char *phone, const char *email) {
     if (!db) return;
-
     const char *sql = "INSERT INTO contacts(name,phone,email) VALUES(?,?,?);";
     sqlite3_stmt *stmt = NULL;
     int rc;
@@ -119,7 +116,6 @@ void DeleteContact(int id) {
     if (stmt) sqlite3_finalize(stmt);
 }
 
-// Create listview (report mode) with columns
 HWND CreateListView(HWND parent) {
     RECT rc; GetClientRect(parent, &rc);
     HWND h = CreateWindowEx(0, WC_LISTVIEW, "",
@@ -140,7 +136,7 @@ HWND CreateListView(HWND parent) {
     return h;
 }
 
-// Populate listview from DB (filter may be NULL or empty)
+// ✅ Modified version (adds “No contact found.” message)
 void LoadContactsToListView(HWND hList, const char *filter) {
     if (!hList || !db) return;
 
@@ -182,7 +178,11 @@ void LoadContactsToListView(HWND hList, const char *filter) {
 
     if (stmt) sqlite3_finalize(stmt);
 
-    // update statusbar text
+    // ✅ Show popup if search returned no results
+    if (row == 0 && filter && strlen(filter) > 0) {
+        MessageBox(hMainWnd, "No contact found.", "Info", MB_OK | MB_ICONINFORMATION);
+    }
+
     char status[64];
     snprintf(status, sizeof(status), "%d contacts", row);
     SendMessage(hStatusBar, SB_SETTEXT, 0, (LPARAM)status);
@@ -201,7 +201,6 @@ void CreateMainControls(HWND hWnd) {
         0, 0, 0, 0, hWnd, (HMENU)IDC_STATUSBAR, hInst, NULL);
 }
 
-// helper: get selected item's contact id (-1 if none)
 int GetSelectedContactId() {
     if (!hListView) return -1;
     int sel = ListView_GetNextItem(hListView, -1, LVNI_SELECTED);
@@ -216,9 +215,6 @@ int GetSelectedContactId() {
     return (int)it.lParam;
 }
 
-//======================================================
-// WinMain, registration and message loop
-//======================================================
 ATOM MyRegisterClass(HINSTANCE hInstance) {
     WNDCLASSEX wcex;
     ZeroMemory(&wcex, sizeof(wcex));
@@ -226,15 +222,12 @@ ATOM MyRegisterClass(HINSTANCE hInstance) {
     wcex.style = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc = WndProc;
     wcex.hInstance = hInstance;
-
-    // Use the DEFAULT WINDOWS ICON
-    wcex.hIcon = LoadIcon(NULL, IDI_APPLICATION); 
+    wcex.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wcex.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);
     wcex.lpszClassName = "ContactMgrClass";
-    wcex.hIconSm = LoadIcon(NULL, IDI_APPLICATION); 
-
+    wcex.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
     return RegisterClassEx(&wcex);
 }
 
@@ -254,7 +247,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrev, LPSTR lpCmdLine, int 
     icex.dwICC = ICC_LISTVIEW_CLASSES | ICC_BAR_CLASSES;
     InitCommonControlsEx(&icex);
 
-    // NEW: Load Accelerator Table (for keyboard shortcuts)
     HACCEL hAccel = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDR_ACCEL));
 
     InitDatabase();
@@ -278,7 +270,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrev, LPSTR lpCmdLine, int 
     return (int)msg.wParam;
 }
 
-// Window proc
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
     case WM_CREATE:
@@ -357,35 +348,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
     return 0;
 }
 
-
-// AddDlgProc 
 INT_PTR CALLBACK AddDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     UNREFERENCED_PARAMETER(lParam);
-
     switch (message) {
     case WM_INITDIALOG:
         SetFocus(GetDlgItem(hDlg, IDC_ADD_NAME));
         return (INT_PTR)TRUE;
-
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK) {
-            char name[256] = {0}, phone[128] = {0}, email[256] = {0};
-
+            char name[256]={0}, phone[128]={0}, email[256]={0};
             GetDlgItemTextA(hDlg, IDC_ADD_NAME, name, sizeof(name));
             GetDlgItemTextA(hDlg, IDC_ADD_PHONE, phone, sizeof(phone));
             GetDlgItemTextA(hDlg, IDC_ADD_EMAIL, email, sizeof(email));
-
             if (strlen(name) == 0) {
                 MessageBox(hDlg, "Name is required.", "Input Error", MB_ICONERROR);
                 SetFocus(GetDlgItem(hDlg, IDC_ADD_NAME));
                 return (INT_PTR)TRUE;
             }
-
             AddContact(name, phone, email);
-
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
-
         } else if (LOWORD(wParam) == IDCANCEL) {
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
@@ -395,7 +377,6 @@ INT_PTR CALLBACK AddDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
     return (INT_PTR)FALSE;
 }
 
-// Edit dialog: receives contact id in lParam via DialogBoxParam
 INT_PTR CALLBACK EditDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     static int contactId = -1;
     switch (message) {
@@ -432,9 +413,9 @@ INT_PTR CALLBACK EditDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             int id = (int)GetWindowLongPtr(hDlg, GWLP_USERDATA);
             if (id > 0 && MessageBox(hDlg, "Delete this contact?", "Confirm", MB_YESNO | MB_ICONQUESTION) == IDYES) {
                 DeleteContact(id);
-                EndDialog(hDlg, LOWORD(wParam));
-                return (INT_PTR)TRUE;
+                EndDialog(hDlg, IDOK);
             }
+            return (INT_PTR)TRUE;
         } else if (LOWORD(wParam) == IDCANCEL) {
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
