@@ -4,6 +4,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "resource.h"
 #include "sqlite3.h"
 
@@ -16,16 +17,46 @@ HWND hSearchEdit = NULL;
 HWND hStatusBar = NULL;
 HWND hMainWnd = NULL;
 
-// forward
+// forward declarations
 ATOM MyRegisterClass(HINSTANCE);
 BOOL InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK AddDlgProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK EditDlgProc(HWND, UINT, WPARAM, LPARAM);
 
-// Safe error handler (no exit!)
+// helper: show SQLite error
 void sql_error(const char *msg) {
     MessageBoxA(NULL, msg, "SQLite Error", MB_ICONERROR);
+}
+
+// ✅ helper: check if name contains only alphabets and spaces
+BOOL IsNameValid(const char *name) {
+    if (strlen(name) == 0) return FALSE; // name can't be empty
+    for (int i = 0; name[i]; i++) {
+        if (!isalpha((unsigned char)name[i]) && !isspace((unsigned char)name[i])) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+// helper: check if phone is numeric
+BOOL IsPhoneValid(const char *phone) {
+    if (strlen(phone) == 0) return TRUE; // allow empty
+    for (int i = 0; phone[i]; i++) {
+        if (!isdigit((unsigned char)phone[i])) return FALSE;
+    }
+    return TRUE;
+}
+
+// helper: check if email contains '@' and no spaces
+BOOL IsEmailValid(const char *email) {
+    if (strlen(email) == 0) return TRUE; // allow empty
+    if (strchr(email, '@') == NULL) return FALSE;
+    for (int i = 0; email[i]; i++) {
+        if (isspace((unsigned char)email[i]) || email[i] == ',') return FALSE;
+    }
+    return TRUE;
 }
 
 void InitDatabase() {
@@ -83,7 +114,6 @@ void AddContact(const char *name, const char *phone, const char *email) {
 
 void UpdateContact(int id,const char *name,const char *phone,const char *email) {
     if (!db) return;
-
     const char *sql = "UPDATE contacts SET name=?, phone=?, email=? WHERE id=?;";
     sqlite3_stmt *stmt = NULL;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) == SQLITE_OK) {
@@ -102,7 +132,6 @@ void UpdateContact(int id,const char *name,const char *phone,const char *email) 
 
 void DeleteContact(int id) {
     if (!db) return;
-
     const char *sql = "DELETE FROM contacts WHERE id=?;";
     sqlite3_stmt *stmt = NULL;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) == SQLITE_OK) {
@@ -136,10 +165,8 @@ HWND CreateListView(HWND parent) {
     return h;
 }
 
-// ✅ Modified version (adds “No contact found.” message)
 void LoadContactsToListView(HWND hList, const char *filter) {
     if (!hList || !db) return;
-
     ListView_DeleteAllItems(hList);
 
     sqlite3_stmt *stmt = NULL;
@@ -177,8 +204,6 @@ void LoadContactsToListView(HWND hList, const char *filter) {
     }
 
     if (stmt) sqlite3_finalize(stmt);
-
-    // ✅ Show popup if search returned no results
     if (row == 0 && filter && strlen(filter) > 0) {
         MessageBox(hMainWnd, "No contact found.", "Info", MB_OK | MB_ICONINFORMATION);
     }
@@ -191,12 +216,9 @@ void LoadContactsToListView(HWND hList, const char *filter) {
 void CreateMainControls(HWND hWnd) {
     hSearchEdit = CreateWindowEx(0, "EDIT", "", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_LEFT,
         10, 6, 260, 24, hWnd, (HMENU)IDC_SEARCH_EDIT, hInst, NULL);
-
     CreateWindowEx(0, "BUTTON", "Search", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
         280, 6, 80, 24, hWnd, (HMENU)IDC_SEARCH_BTN, hInst, NULL);
-
     hListView = CreateListView(hWnd);
-
     hStatusBar = CreateWindowEx(0, STATUSCLASSNAME, NULL, WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP,
         0, 0, 0, 0, hWnd, (HMENU)IDC_STATUSBAR, hInst, NULL);
 }
@@ -216,9 +238,7 @@ int GetSelectedContactId() {
 }
 
 ATOM MyRegisterClass(HINSTANCE hInstance) {
-    WNDCLASSEX wcex;
-    ZeroMemory(&wcex, sizeof(wcex));
-    wcex.cbSize = sizeof(wcex);
+    WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
     wcex.style = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc = WndProc;
     wcex.hInstance = hInstance;
@@ -242,22 +262,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 }
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrev, LPSTR lpCmdLine, int nCmdShow) {
-    INITCOMMONCONTROLSEX icex;
-    icex.dwSize = sizeof(icex);
-    icex.dwICC = ICC_LISTVIEW_CLASSES | ICC_BAR_CLASSES;
+    INITCOMMONCONTROLSEX icex = { sizeof(icex), ICC_LISTVIEW_CLASSES | ICC_BAR_CLASSES };
     InitCommonControlsEx(&icex);
-
     HACCEL hAccel = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDR_ACCEL));
-
     InitDatabase();
     if (!db) {
         MessageBox(NULL, "Database initialization failed.", "Error", MB_ICONERROR);
         return 1;
     }
-
     MyRegisterClass(hInstance);
     if (!InitInstance(hInstance, nCmdShow)) return FALSE;
-
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0)) {
         if (!TranslateAccelerator(hMainWnd, hAccel, &msg)) {
@@ -265,7 +279,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrev, LPSTR lpCmdLine, int 
             DispatchMessage(&msg);
         }
     }
-
     if (db) sqlite3_close(db);
     return (int)msg.wParam;
 }
@@ -276,7 +289,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         CreateMainControls(hWnd);
         LoadContactsToListView(hListView, NULL);
         break;
-
     case WM_SIZE: {
         RECT rc; GetClientRect(hWnd, &rc);
         MoveWindow(hSearchEdit, 10, 6, 260, 24, TRUE);
@@ -284,18 +296,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         MoveWindow(hListView, 10, 40, rc.right - 20, rc.bottom - 80, TRUE);
         SendMessage(hStatusBar, WM_SIZE, 0, 0);
     } break;
-
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
-        case IDM_FILE_EXIT:
-            PostQuitMessage(0);
-            break;
+        case IDM_FILE_EXIT: PostQuitMessage(0); break;
         case IDM_CONTACT_ADD:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ADD_CONTACT), hWnd, AddDlgProc);
             LoadContactsToListView(hListView, NULL);
             break;
         case IDC_SEARCH_BTN: {
-            char buf[256] = {0};
+            char buf[256]={0};
             GetWindowTextA(hSearchEdit, buf, sizeof(buf));
             LoadContactsToListView(hListView, buf);
         } break;
@@ -308,48 +317,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         } break;
         case IDM_CONTACT_DEL: {
             int id = GetSelectedContactId();
-            if (id > 0) {
-                if (MessageBox(hWnd, "Delete this contact?", "Confirm", MB_YESNO | MB_ICONQUESTION) == IDYES) {
-                    DeleteContact(id);
-                    LoadContactsToListView(hListView, NULL);
-                }
+            if (id > 0 && MessageBox(hWnd, "Delete this contact?", "Confirm", MB_YESNO | MB_ICONQUESTION)==IDYES) {
+                DeleteContact(id);
+                LoadContactsToListView(hListView, NULL);
             }
         } break;
         }
         break;
-
-    case WM_NOTIFY: {
-        LPNMHDR pnm = (LPNMHDR)lParam;
-        if (pnm->idFrom == IDC_LISTVIEW) {
-            if (pnm->code == NM_DBLCLK) {
-                int id = GetSelectedContactId();
-                if (id > 0) {
-                    DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_EDIT_CONTACT), hWnd, EditDlgProc, (LPARAM)id);
-                    LoadContactsToListView(hListView, NULL);
-                }
-            } else if (pnm->code == NM_RCLICK) {
-                POINT pt; GetCursorPos(&pt);
-                HMENU hMenu = CreatePopupMenu();
-                AppendMenu(hMenu, MF_STRING, IDM_CONTACT_EDIT, "Edit");
-                AppendMenu(hMenu, MF_STRING, IDM_CONTACT_DEL, "Delete");
-                TrackPopupMenu(hMenu, TPM_LEFTALIGN | TPM_RIGHTBUTTON, pt.x, pt.y, 0, hWnd, NULL);
-                DestroyMenu(hMenu);
-            }
-        }
-    } break;
-
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+    case WM_DESTROY: PostQuitMessage(0); break;
+    default: return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
 }
 
+// ✅ ADD CONTACT DIALOG
 INT_PTR CALLBACK AddDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-    UNREFERENCED_PARAMETER(lParam);
     switch (message) {
     case WM_INITDIALOG:
         SetFocus(GetDlgItem(hDlg, IDC_ADD_NAME));
@@ -360,16 +342,29 @@ INT_PTR CALLBACK AddDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
             GetDlgItemTextA(hDlg, IDC_ADD_NAME, name, sizeof(name));
             GetDlgItemTextA(hDlg, IDC_ADD_PHONE, phone, sizeof(phone));
             GetDlgItemTextA(hDlg, IDC_ADD_EMAIL, email, sizeof(email));
+
             if (strlen(name) == 0) {
                 MessageBox(hDlg, "Name is required.", "Input Error", MB_ICONERROR);
-                SetFocus(GetDlgItem(hDlg, IDC_ADD_NAME));
                 return (INT_PTR)TRUE;
             }
+            if (!IsNameValid(name)) {
+                MessageBox(hDlg, "Name must contain only letters.", "Input Error", MB_ICONERROR);
+                return (INT_PTR)TRUE;
+            }
+            if (!IsPhoneValid(phone)) {
+                MessageBox(hDlg, "Phone must contain only digits.", "Input Error", MB_ICONERROR);
+                return (INT_PTR)TRUE;
+            }
+            if (!IsEmailValid(email)) {
+                MessageBox(hDlg, "Email must contain '@' and no spaces.", "Input Error", MB_ICONERROR);
+                return (INT_PTR)TRUE;
+            }
+
             AddContact(name, phone, email);
-            EndDialog(hDlg, LOWORD(wParam));
+            EndDialog(hDlg, IDOK);
             return (INT_PTR)TRUE;
         } else if (LOWORD(wParam) == IDCANCEL) {
-            EndDialog(hDlg, LOWORD(wParam));
+            EndDialog(hDlg, IDCANCEL);
             return (INT_PTR)TRUE;
         }
         break;
@@ -377,6 +372,7 @@ INT_PTR CALLBACK AddDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
     return (INT_PTR)FALSE;
 }
 
+// ✅ EDIT CONTACT DIALOG
 INT_PTR CALLBACK EditDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     static int contactId = -1;
     switch (message) {
@@ -406,18 +402,29 @@ INT_PTR CALLBACK EditDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             GetDlgItemTextA(hDlg, IDC_EDIT_NAME, name, sizeof(name));
             GetDlgItemTextA(hDlg, IDC_EDIT_PHONE, phone, sizeof(phone));
             GetDlgItemTextA(hDlg, IDC_EDIT_EMAIL, email, sizeof(email));
-            if (id > 0) UpdateContact(id, name, phone, email);
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        } else if (LOWORD(wParam) == IDM_CONTACT_DEL) {
-            int id = (int)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-            if (id > 0 && MessageBox(hDlg, "Delete this contact?", "Confirm", MB_YESNO | MB_ICONQUESTION) == IDYES) {
-                DeleteContact(id);
-                EndDialog(hDlg, IDOK);
+
+            if (strlen(name) == 0) {
+                MessageBox(hDlg, "Name is required.", "Input Error", MB_ICONERROR);
+                return (INT_PTR)TRUE;
             }
+            if (!IsNameValid(name)) {
+                MessageBox(hDlg, "Name must contain only letters.", "Input Error", MB_ICONERROR);
+                return (INT_PTR)TRUE;
+            }
+            if (!IsPhoneValid(phone)) {
+                MessageBox(hDlg, "Phone must contain only digits.", "Input Error", MB_ICONERROR);
+                return (INT_PTR)TRUE;
+            }
+            if (!IsEmailValid(email)) {
+                MessageBox(hDlg, "Email must contain '@' and no spaces.", "Input Error", MB_ICONERROR);
+                return (INT_PTR)TRUE;
+            }
+
+            UpdateContact(id, name, phone, email);
+            EndDialog(hDlg, IDOK);
             return (INT_PTR)TRUE;
         } else if (LOWORD(wParam) == IDCANCEL) {
-            EndDialog(hDlg, LOWORD(wParam));
+            EndDialog(hDlg, IDCANCEL);
             return (INT_PTR)TRUE;
         }
         break;
