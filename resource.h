@@ -1,32 +1,40 @@
-// resource.h
-#pragma once
+// resource.h - Contact Management System IDs
 
-#define IDC_ADD_NAME      101
-#define IDC_ADD_PHONE     102
-#define IDC_ADD_EMAIL     103
-#define IDC_CLEAR         104  // NEW: Clear button
+// Standard Dialog IDs
+#define IDOK 1
+#define IDCANCEL 2
 
-#define IDC_EDIT_NAME     202
-#define IDC_EDIT_PHONE    203
-#define IDC_EDIT_EMAIL    204
+// Main Window Controls
+#define IDC_SEARCH_EDIT 101
+#define IDC_SEARCH_BTN 102
+#define IDC_LISTVIEW 103
+#define IDC_STATUSBAR 104
+#define IDC_ADD_CONTACT 105
+#define IDC_EDIT_CONTACT 106
+#define IDC_DELETE_CONTACT 107
 
-#define IDC_LISTVIEW      401
-#define IDC_SEARCH_EDIT   402
-#define IDC_SEARCH_BTN    403
-#define IDC_STATUSBAR     404
+// Dialog IDs
+#define IDD_ADD_CONTACT 200
+#define IDD_EDIT_CONTACT 201
 
-#define IDM_FILE_EXIT     9001
-#define IDM_CONTACT_ADD   9002
-#define IDM_CONTACT_VIEW  9003
-#define IDM_CONTACT_EDIT  9004
-#define IDM_CONTACT_DEL   9005
-#define IDM_CONTACT_SEARCH 9006
+// Add Dialog Control IDs
+#define IDC_ADD_NAME 301
+#define IDC_ADD_PHONE 302
+#define IDC_ADD_EMAIL 303
+#define IDC_CLEAR 304
 
-#define IDR_MENU1         1001
-#define IDR_ACCEL         1002  // NEW: Accelerator table
-#define IDI_APP_ICON      2001  // NEW: App Icon
+// Edit Dialog Control IDs
+#define IDC_EDIT_NAME 401
+#define IDC_EDIT_PHONE 402
+#define IDC_EDIT_EMAIL 403
+#define IDC_DELETE_ITEM 404
 
-#define IDD_ADD_CONTACT   3001
-#define IDD_EDIT_CONTACT  3002
-
-#define MAX_LOADSTRING    100
+// Menu IDs and Accelerators
+#define IDR_MENU1 500
+#define IDR_ACCEL 501
+#define IDM_FILE_EXIT 510
+#define IDM_CONTACT_ADD 520
+#define IDM_CONTACT_SEARCH 521
+#define IDM_CONTACT_VIEW 522
+#define IDM_CONTACT_EDIT 523
+#define IDM_CONTACT_DEL 524

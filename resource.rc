@@ -2,92 +2,82 @@
 #include <windows.h>
 
 // ======================
-// ICON (add a default icon, or use your own .ico file)
-// ======================
-
-
-
-// ======================
 // MENU
 // ======================
 IDR_MENU1 MENU
 BEGIN
     POPUP "&File"
     BEGIN
-        MENUITEM "E&xit\tAlt+F4", IDM_FILE_EXIT  // Add Alt+F4 shortcut
+        MENUITEM "E&xit\tAlt+F4", IDM_FILE_EXIT
     END
     POPUP "&Contact"
     BEGIN
         MENUITEM "&Add\tCtrl+N", IDM_CONTACT_ADD
-        MENUITEM "&Search\tCtrl+F", IDM_CONTACT_SEARCH  // Add Ctrl+F for Search
         MENUITEM "&View All\tCtrl+V", IDM_CONTACT_VIEW
+        MENUITEM "&Search\tCtrl+F", IDM_CONTACT_SEARCH
+        MENUITEM SEPARATOR
         MENUITEM "&Edit\tCtrl+E", IDM_CONTACT_EDIT
         MENUITEM "&Delete\tDel", IDM_CONTACT_DEL
     END
 END
 
-
 // ======================
-// ACCELERATOR TABLE (Make keyboard shortcuts WORK)
+// ACCELERATOR TABLE
 // ======================
 IDR_ACCEL ACCELERATORS
 BEGIN
     "N", IDM_CONTACT_ADD, VIRTKEY, CONTROL, NOINVERT
-    "F", IDM_CONTACT_SEARCH, VIRTKEY, CONTROL, NOINVERT
     "V", IDM_CONTACT_VIEW, VIRTKEY, CONTROL, NOINVERT
+    "F", IDM_CONTACT_SEARCH, VIRTKEY, CONTROL, NOINVERT
     "E", IDM_CONTACT_EDIT, VIRTKEY, CONTROL, NOINVERT
     VK_DELETE, IDM_CONTACT_DEL, VIRTKEY, NOINVERT
     VK_F4, IDM_FILE_EXIT, VIRTKEY, ALT, NOINVERT
 END
 
-
 // ======================
-// ADD CONTACT DIALOG (Modernized)
+// ADD CONTACT DIALOG
 // ======================
-IDD_ADD_CONTACT DIALOG DISCARDABLE  0, 0, 260, 150
+IDD_ADD_CONTACT DIALOG DISCARDABLE 0, 0, 260, 150
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU | DS_CENTER | DS_SETFONT
 CAPTION "Add New Contact"
 FONT 9, "Segoe UI"
 BEGIN
-    // Group box to organize fields
-    GROUPBOX        "Contact Details", -1, 10, 8, 240, 90
+    GROUPBOX "Contact Details", -1, 10, 8, 240, 90
 
-    LTEXT           "Name:", -1, 20, 26, 40, 10
-    EDITTEXT        IDC_ADD_NAME,   70, 24, 170, 14, ES_AUTOHSCROLL | WS_TABSTOP
+    LTEXT "Name:", -1, 20, 26, 40, 10
+    EDITTEXT IDC_ADD_NAME, 70, 24, 170, 14, ES_AUTOHSCROLL | WS_TABSTOP
 
-    LTEXT           "Phone:", -1, 20, 48, 40, 10
-    EDITTEXT        IDC_ADD_PHONE,  70, 46, 170, 14, ES_AUTOHSCROLL | WS_TABSTOP
+    LTEXT "Phone:", -1, 20, 48, 40, 10
+    EDITTEXT IDC_ADD_PHONE, 70, 46, 170, 14, ES_AUTOHSCROLL | WS_TABSTOP
 
-    LTEXT           "Email:", -1, 20, 70, 40, 10
-    EDITTEXT        IDC_ADD_EMAIL,  70, 68, 170, 14, ES_AUTOHSCROLL | WS_TABSTOP
+    LTEXT "Email:", -1, 20, 70, 40, 10
+    EDITTEXT IDC_ADD_EMAIL, 70, 68, 170, 14, ES_AUTOHSCROLL | WS_TABSTOP
 
-    // Clear button (for convenience)
-    PUSHBUTTON      "Clear", IDC_CLEAR, 20, 104, 60, 14, WS_TABSTOP
-    DEFPUSHBUTTON   "Add", IDOK,     90, 102, 60, 16, WS_TABSTOP
-    PUSHBUTTON      "Cancel", IDCANCEL, 160, 102, 80, 16, WS_TABSTOP
+    PUSHBUTTON "Clear", IDC_CLEAR, 20, 116, 60, 14, WS_TABSTOP
+    DEFPUSHBUTTON "Add", IDOK, 90, 114, 60, 16, WS_TABSTOP
+    PUSHBUTTON "Cancel", IDCANCEL, 160, 114, 80, 16, WS_TABSTOP
 END
 
-
 // ======================
-// EDIT CONTACT DIALOG (Modernized)
+// EDIT CONTACT DIALOG
 // ======================
-IDD_EDIT_CONTACT DIALOG DISCARDABLE  0,0, 280, 170
+IDD_EDIT_CONTACT DIALOG DISCARDABLE 0,0, 280, 170
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU | DS_CENTER | DS_SETFONT
 CAPTION "Edit Contact"
 FONT 9, "Segoe UI"
 BEGIN
-    GROUPBOX        "Contact Details", -1, 10, 8, 260, 100
+    GROUPBOX "Contact Details", -1, 10, 8, 260, 100
 
-    LTEXT           "Name:", -1, 20, 26, 40, 10
-    EDITTEXT        IDC_EDIT_NAME,   70, 24, 190, 14, ES_AUTOHSCROLL | WS_TABSTOP
+    LTEXT "Name:", -1, 20, 26, 40, 10
+    EDITTEXT IDC_EDIT_NAME, 70, 24, 190, 14, ES_AUTOHSCROLL | WS_TABSTOP
 
-    LTEXT           "Phone:", -1, 20, 48, 40, 10
-    EDITTEXT        IDC_EDIT_PHONE,  70, 46, 190, 14, ES_AUTOHSCROLL | WS_TABSTOP
+    LTEXT "Phone:", -1, 20, 48, 40, 10
+    EDITTEXT IDC_EDIT_PHONE, 70, 46, 190, 14, ES_AUTOHSCROLL | WS_TABSTOP
 
-    LTEXT           "Email:", -1, 20, 70, 40, 10
-    EDITTEXT        IDC_EDIT_EMAIL,  70, 68, 190, 14, ES_AUTOHSCROLL | WS_TABSTOP
+    LTEXT "Email:", -1, 20, 70, 40, 10
+    EDITTEXT IDC_EDIT_EMAIL, 70, 68, 190, 14, ES_AUTOHSCROLL | WS_TABSTOP
 
-    PUSHBUTTON      "Update", IDOK,  60, 116, 60, 16, WS_TABSTOP
-    PUSHBUTTON      "Delete", IDM_CONTACT_DEL, 130, 116, 60, 16, WS_TABSTOP
-    PUSHBUTTON      "Close", IDCANCEL,200,116,70,16, WS_TABSTOP
+    PUSHBUTTON "Update", IDOK, 60, 130, 60, 16, WS_TABSTOP
+    PUSHBUTTON "Delete", IDC_DELETE_ITEM, 130, 130, 60, 16, WS_TABSTOP
+    PUSHBUTTON "Close", IDCANCEL, 200, 130, 70, 16, WS_TABSTOP
 END
